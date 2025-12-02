@@ -3,6 +3,7 @@ package com.riwi.catalog.repository;
 import com.riwi.catalog.entity.Tarea;
 import com.riwi.catalog.entity.Tarea.EstadoTarea;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface TareaRepository extends JpaRepository<Tarea, Long> {
+public interface TareaRepository extends JpaRepository<Tarea, Long>, JpaSpecificationExecutor<Tarea> {
 
     @EntityGraph(attributePaths = {"usuario", "categoria"})
     Optional<Tarea> findWithRelationsById(Long id);
