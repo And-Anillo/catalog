@@ -5,7 +5,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -192,13 +191,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Maneja MethodArgumentNotValidException (validaciones de @Valid)
+     * Override for handling MethodArgumentNotValidException from ResponseEntityExceptionHandler
+     * This avoids ambiguous @ExceptionHandler mappings by providing the proper override signature.
      */
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
-            MethodArgumentNotValidException ex, WebRequest request) {
+    @Override
+    protected org.springframework.http.ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex,
+            org.springframework.http.HttpHeaders headers,
+            org.springframework.http.HttpStatus status,
+            WebRequest request) {
         String traceId = extractTraceId(request);
-        
+
         log.warn("MethodArgumentNotValidException [TraceId: {}]", traceId);
 
         Map<String, List<String>> errors = new HashMap<>();
@@ -220,9 +223,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             .errors(errors)
             .build();
 
-        return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .body(errorResponse);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     /**
