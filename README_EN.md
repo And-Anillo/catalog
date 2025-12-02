@@ -1,391 +1,61 @@
-# Catalog Management System - User Story Sprint 4 & 5
+﻿# Catalog Management System — Short Overview
 
-A production-grade Spring Boot 3.5.7 application implementing comprehensive task management with advanced features including JPA relationships, optimized transactions, error handling, observability, and JWT-based security.
+This is a compact summary of the Catalog project (Spring Boot 3.x, Java 17).
+It provides user and task management with production-oriented infrastructure for
+validation, standardized errors, logging/tracing, and JWT-based security.
 
-## Table of Contents
+Summary
+- Users and Tasks: CRUD operations, `User` (1) ↔ (N) `Task` relationship
+- Validation: Jakarta Bean Validation + custom `@ValidEmail` and `@StrongPassword`
+- Errors: Centralized handler returning RFC 7807 problem details (includes `traceId`)
+- Observability: Request trace IDs (MDC), interceptor, and AOP method logging
+- Security: Stateless JWT authentication (HS256) and role-based access (ADMIN/USER)
 
-1. [Overview](#overview)
-2. [Features](#features)
-3. [Technology Stack](#technology-stack)
-4. [Project Structure](#project-structure)
-5. [Getting Started](#getting-started)
-6. [API Authentication](#api-authentication)
-7. [API Endpoints](#api-endpoints)
-8. [Error Handling](#error-handling)
-9. [Logging & Tracing](#logging--tracing)
-10. [Security & Authorization](#security--authorization)
-11. [Database Schema](#database-schema)
-12. [Configuration](#configuration)
-13. [Development Guidelines](#development-guidelines)
-14. [Testing](#testing)
+Quick Start
+1. Clone:
+  ```powershell
+  git clone https://github.com/And-Anillo/catalog.git
+  cd catalog
+  ```
+2. Build:
+  ```powershell
+  .\mvnw.cmd clean package
+  ```
+3. Run:
+  ```powershell
+  .\mvnw.cmd spring-boot:run
+  # or
+  java -jar target\catalog-0.0.1-SNAPSHOT.jar
+  ```
+4. Health check:
+  ```powershell
+  curl http://localhost:8080/api/v1/health
+  ```
 
----
+Authentication (short)
+- Login: `POST /api/v1/auth/login` with JSON `{ "username": "admin", "password": "admin123" }`
+- Returns: `{ token, username, role, expiresIn }` (use `Authorization: Bearer {token}`)
+- Test accounts (development): `admin/admin123` (ADMIN), `user/user123` (USER)
 
-## Overview
+Notable conventions
+- Error responses follow RFC 7807 and include `errorCode`, `timestamp`, and `traceId`.
+- Logs include `traceId` and `userId` via SLF4J MDC; trace ID is exposed on responses.
+- JWT secret: set via `JWT_SECRET` environment variable; default expiration `jwt.expirationMs`.
 
-The Catalog Management System is a comprehensive Spring Boot application that demonstrates enterprise-level patterns and practices. It covers two major development sprints:
+Where to look in the code
+- Main packages: `application` (domain/use-cases) and `infrastructure` (controller, security, logging, exception, validation).
+- Key files:
+  - `infrastructure/exception/GlobalExceptionHandler.java`
+  - `infrastructure/logging/TraceIdInterceptor.java`
+  - `infrastructure/security/JwtTokenProvider.java`
+  - `infrastructure/security/JwtAuthenticationFilter.java`
 
-- **Sprint 4 (HU-semana4):** Task Management with JPA Relationships and Optimized Transactions
-- **Sprint 5 (HU-semana5):** Error Management & Security Infrastructure
-
-The application provides:
-- User management with role-based access control
-- Task management with rich domain models and relationships
-- Centralized error handling following RFC 7807 standard
-- Comprehensive logging with distributed trace correlation
-- JWT-based stateless authentication
-- Production-ready security configuration
-
----
-
-## Features
-
-### Sprint 4: Task Management & JPA Relationships
-
-#### User Management
-- User creation with validation (email, strong password)
-- User profile management
-- Role-based user classification (ADMIN, USER)
-- User activity tracking through tasks
-
-#### Task Management
-- Create, read, update, delete operations for tasks
-- Task assignment to users
-- Task status management (PENDING, IN_PROGRESS, COMPLETED, CANCELLED)
-- Task priority levels (LOW, MEDIUM, HIGH, CRITICAL)
-- Due date tracking with deadline monitoring
-- Task descriptions and detailed comments
-
-#### Relationship Management
-- One-to-Many relationship between User and Task
-- Cascade operations for dependent records
-- Lazy loading optimization strategies
-- Entity validation with custom constraints
-
-#### Transaction Optimization
-- Declarative transaction management with @Transactional
-- Read-only transaction optimization
-- Isolation level configuration
-- Proper exception handling with rollback semantics
-
-### Sprint 5: Error Management & Security
-
-#### Error Handling (RFC 7807 Compliance)
-- Centralized exception handling with @RestControllerAdvice
-- Standardized error response format with:
-  - HTTP status codes
-  - Machine-readable error codes
-  - Human-readable error messages
-  - Request trace IDs for log correlation
-  - Field-level validation errors
-  - Timestamps for error tracking
-
-#### Input Validation
-- Custom validation annotations:
-  - `@ValidEmail` - RFC 5322 compliant email validation
-  - `@StrongPassword` - Password strength requirements (8+ chars, uppercase, lowercase, digit, special char)
-- Jakarta Bean Validation integration
-- Method-level and field-level validation
-- Global validation error aggregation
-
-#### Observability & Logging
-- Distributed tracing with trace IDs (X-Trace-Id header)
-- SLF4J MDC integration for automatic context propagation
-- AOP-based method logging with execution timing
-- Asynchronous logging for performance
-- Rolling file appenders with retention policies
-- Color-coded console output for development
-
-#### Security & Authentication
-- Spring Security framework integration
-- JWT (JSON Web Token) authentication using HS256 algorithm
-- Role-based access control (RBAC)
-- Bearer token validation
-- Password encryption with BCrypt
-- Test credentials for development (admin/admin123, user/user123)
-- CSRF protection disabled for stateless API
-- H2 database console access for development
+If you want this README extended with API examples, deployment instructions, or a smaller localization, tell me which sections to keep and I’ll update it.
 
 ---
 
-## Technology Stack
+Maintainers: Catalog Development Team — see repository for contributors and detailed docs.
 
-### Core Framework
-- **Spring Boot 3.5.7** - Application framework
-- **Java 17** - Programming language
-- **Maven 3.9.x** - Build tool
-
-### Persistence & Database
-- **Spring Data JPA** - ORM and data access layer
-- **Hibernate** - JPA implementation with lazy loading optimization
-- **Flyway** - Database migration and schema versioning
-- **H2 Database** - In-memory/file-based relational database
-- **MySQL** - Optional production database (configured via properties)
-
-### Security
-- **Spring Security** - Authentication and authorization framework
-- **JJWT 0.12.3** - JWT token generation and validation (io.jsonwebtoken)
-- **BCrypt** - Password encoding
-
-### Logging & Observability
-- **SLF4J** - Logging facade
-- **Logback** - Logging implementation with async appenders
-- **AspectJ** - AOP framework for cross-cutting concerns
-- **Spring AOP** - Aspect-oriented programming support
-
-### Validation
-- **Jakarta Bean Validation (javax.validation)** - Input validation framework
-- **Hibernate Validator** - Validation provider
-
-### Development & Testing
-- **Lombok** - Boilerplate code reduction (@Data, @Slf4j, @AllArgsConstructor)
-- **Spring Test** - Testing framework
-- **JUnit 5** - Test runner
-
----
-
-## Project Structure
-
-```
-catalog/
-├── src/
-│   ├── main/
-│   │   ├── java/com/riwi/catalog/
-│   │   │   ├── CatalogApplication.java          # Main application class
-│   │   │   ├── application/
-│   │   │   │   ├── dto/                         # Data Transfer Objects
-│   │   │   │   │   ├── UsuarioCreateDTO.java
-│   │   │   │   │   ├── LoginRequest.java
-│   │   │   │   │   └── AuthResponse.java
-│   │   │   │   ├── entity/                      # Domain entities
-│   │   │   │   ├── mapper/                      # Entity/DTO mappers
-│   │   │   │   ├── usecase/                     # Business logic (use cases)
-│   │   │   │   └── repository/                  # Data access repositories
-│   │   │   └── infrastructure/
-│   │   │       ├── exception/                   # Exception handling
-│   │   │       │   ├── CatalogException.java
-│   │   │       │   ├── ResourceNotFoundException.java
-│   │   │       │   ├── BusinessConflictException.java
-│   │   │       │   ├── ValidationException.java
-│   │   │       │   ├── UnauthorizedException.java
-│   │   │       │   ├── ForbiddenException.java
-│   │   │       │   ├── ErrorResponse.java
-│   │   │       │   └── GlobalExceptionHandler.java
-│   │   │       ├── controller/                  # REST controllers
-│   │   │       │   ├── AuthController.java
-│   │   │       │   └── (other endpoint controllers)
-│   │   │       ├── logging/                     # Observability infrastructure
-│   │   │       │   ├── TraceContext.java
-│   │   │       │   ├── TraceIdInterceptor.java
-│   │   │       │   ├── LoggingConfiguration.java
-│   │   │       │   ├── LoggingAspect.java
-│   │   │       │   └── logback-spring.xml
-│   │   │       ├── security/                    # Security configuration
-│   │   │       │   ├── JwtTokenProvider.java
-│   │   │       │   ├── JwtAuthenticationFilter.java
-│   │   │       │   └── SecurityConfiguration.java
-│   │   │       └── validation/                  # Custom validators
-│   │   │           ├── ValidEmail.java
-│   │   │           ├── ValidEmailValidator.java
-│   │   │           ├── StrongPassword.java
-│   │   │           └── StrongPasswordValidator.java
-│   │   └── resources/
-│   │       └── application.properties           # Application configuration
-│   └── test/
-│       └── java/com/riwi/catalog/
-│           └── CatalogApplicationTests.java
-├── pom.xml                                      # Maven dependencies and build config
-├── mvnw & mvnw.cmd                              # Maven wrapper scripts
-└── README_EN.md                                 # This file
-```
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- **Java 17 or higher**
-- **Maven 3.6.x or higher** (or use included mvnw wrapper)
-- **Git**
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/And-Anillo/catalog.git
-   cd catalog
-   ```
-
-2. **Build the project**
-   ```bash
-   # Using Maven wrapper (recommended)
-   ./mvnw clean install
-   
-   # Or using system Maven
-   mvn clean install
-   ```
-
-3. **Run the application**
-   ```bash
-   # Using Maven wrapper
-   ./mvnw spring-boot:run
-   
-   # Or using JAR
-   java -jar target/catalog-0.0.1-SNAPSHOT.jar
-   ```
-
-4. **Verify the application is running**
-   ```bash
-   curl http://localhost:8080/api/v1/health
-   ```
-
-### Configuration
-
-The application uses `application.properties` for configuration:
-
-```properties
-# Server Configuration
-server.port=8080
-server.servlet.context-path=/
-spring.application.name=catalog
-
-# Database Configuration
-spring.datasource.url=jdbc:h2:mem:testdb
-spring.datasource.driverClassName=org.h2.Driver
-spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
-spring.jpa.hibernate.ddl-auto=validate
-
-# H2 Console (Development Only)
-spring.h2.console.enabled=true
-spring.h2.console.path=/h2-console
-
-# JWT Configuration
-jwt.secret=${JWT_SECRET:your-secret-key-min-256-bits-long-for-hs256-algorithm}
-jwt.expirationMs=86400000  # 24 hours in milliseconds
-
-# Logging Configuration
-logging.level.com.riwi.catalog=DEBUG
-logging.level.org.springframework=INFO
-logging.pattern.console=[%thread] %-5level %logger{36} - %msg%n
-```
-
----
-
-## API Authentication
-
-### Overview
-
-The API uses JWT (JSON Web Tokens) with Bearer token authentication. All protected endpoints require a valid JWT token in the `Authorization` header.
-
-### Authentication Flow
-
-1. **Client sends credentials to login endpoint**
-   ```http
-   POST /api/v1/auth/login HTTP/1.1
-   Content-Type: application/json
-   
-   {
-     "username": "admin",
-     "password": "admin123"
-   }
-   ```
-
-2. **Server validates credentials and returns JWT token**
-   ```json
-   {
-     "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTcwMzQzMjAwMCwiZXhwIjoxNzAzNTE4NDAwfQ.signature",
-     "username": "admin",
-     "role": "ADMIN",
-     "expiresIn": 86400
-   }
-   ```
-
-3. **Client includes token in Authorization header for subsequent requests**
-   ```http
-   GET /api/v1/usuarios HTTP/1.1
-   Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTcwMzQzMjAwMCwiZXhwIjoxNzAzNTE4NDAwfQ.signature
-   ```
-
-### Test Credentials
-
-The application includes pre-configured test credentials:
-
-| Username | Password    | Role  | Permissions                                           |
-|----------|-------------|-------|-------------------------------------------------------|
-| admin    | admin123    | ADMIN | Create/Update/Delete users and tasks, view all data   |
-| user     | user123     | USER  | Create/Update/Delete own tasks, view own data         |
-
-### Token Structure
-
-JWT tokens are signed using **HS256** (HMAC with SHA-256) algorithm:
-
-- **Header:** `{"alg": "HS256", "typ": "JWT"}`
-- **Payload:** Contains subject (username), role, issued-at, and expiration claims
-- **Signature:** Generated using application secret key (minimum 256 bits for HS256)
-
-### Token Expiration
-
-Default token expiration is **24 hours** (86400 seconds). Configure via `jwt.expirationMs` property.
-
----
-
-## API Endpoints
-
-### Authentication Endpoints
-
-#### Login
-```http
-POST /api/v1/auth/login
-Content-Type: application/json
-
-{
-  "username": "admin",
-  "password": "admin123"
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiJ9...",
-  "username": "admin",
-  "role": "ADMIN",
-  "expiresIn": 86400
-}
-```
-
-**Error Response (401 Unauthorized):**
-```json
-{
-  "type": "about:blank",
-  "title": "Unauthorized",
-  "status": 401,
-  "detail": "Invalid credentials",
-  "instance": "/api/v1/auth/login",
-  "errorCode": "UNAUTHORIZED",
-  "timestamp": "2024-01-01T12:00:00",
-  "traceId": "550e8400-e29b-41d4-a716-446655440000"
-}
-```
-
-### Health Check
-
-#### Check Application Health
-```http
-GET /api/v1/health
-```
-
-**Response (200 OK):**
-```json
-{
-  "status": "UP"
-}
-```
-
-### User Endpoints
-
-#### Get All Users
 ```http
 GET /api/v1/usuarios
 Authorization: Bearer {token}
